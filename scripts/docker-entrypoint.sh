@@ -5,16 +5,7 @@ preflight () {
     if [[ -z ${CLUSTER_NAME+x} ]]; then
         echo >&2 "########### CLUSTER_NAME variable must be set."
         exit 1
-    elif [[ -z ${SST_USER} || -z ${SST_PASS} ]]; then
-        echo >&2 "########### SST_USER and SST_PASS variables must be set in order to start the cluster."
-        exit 1
    fi
-}
-
-cluster_conf () {
-    echo "########### Configuring /etc/my.cnf.d/server.cnf with cluster variables"
-    echo "wsrep_sst_auth                 = ${SST_USER}:${SST_PASS}" >> /etc/my.cnf.d/server.cnf
-    echo "wsrep_on                       = ON" >> /etc/my.cnf.d/server.cnf
 }
 
 
@@ -113,13 +104,6 @@ if [ "$1" = 'mysqld' -a -z "$wantHelp" ]; then
 			echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
 		fi
 
-		if [ "$SST_USER" -a "$SST_PASS" ]; then
-			echo "########## CREATING SST USER FOR REPLICATION ##########"
-			echo "CREATE USER '$SST_USER'@'%' IDENTIFIED BY '$SST_PASS' ;" | "${mysql[@]}"
-			echo "GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO '$SST_USER'@'%' ;" | "${mysql[@]}"
-			echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
-		fi
-
 		echo
 		for f in /docker-entrypoint-initdb.d/*; do
 			case "$f" in
@@ -156,21 +140,21 @@ elif [ ${CLUSTER} = "BOOTSTRAP" ]; then
     preflight
     initialize_db $@
     echo "########### Bootstrapping MariaDB cluster ${CLUSTER_NAME} with primary node ${HOSTNAME}..."
-    cluster_conf
     echo "########### Starting MariaDB cluster..."
     # Workaround odd bug(?) causing corrupted binlog index after initialization
     mv /var/lib/mysql/mysql-bin.index /tmp
     exec $@ --wsrep_node_address="${HOSTNAME}" \
     --wsrep_cluster_name="${CLUSTER_NAME}" \
     --wsrep_new_cluster --wsrep_cluster_address="gcomm://" \
-    --wsrep_node_name="${HOSTNAME}" 
+    --wsrep_node_name="${HOSTNAME}" \
+    --wsrep_provider_options="${WSREP_OPTS}" ${EXTRA_ARGS} 
 else
     echo "########### Joining MariaDB cluster ${CLUSTER_NAME} on nodes ${CLUSTER}..."
     preflight
     initialize_db $@
-    cluster_conf
     exec $@ --wsrep_node_address="${HOSTNAME}" \
     --wsrep_cluster_name="${CLUSTER_NAME}" \
-    --wsrep_cluster_address="gcomm://${CLUSTER}"
-    --wsrep_node_name="${HOSTNAME}" 
+    --wsrep_cluster_address="gcomm://${CLUSTER}" \
+    --wsrep_node_name="${HOSTNAME}" \
+    --wsrep_provider_options="${WSREP_OPTS}" ${EXTRA_ARGS} 
 fi

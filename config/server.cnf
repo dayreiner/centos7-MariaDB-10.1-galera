@@ -1,5 +1,7 @@
 [mysql]
 
+# This config is tuned for a 2xCore, 4GB Ram DB Host
+
 # CLIENT #
 port                           = 3306
 socket                         = /var/lib/mysql/mysql.sock
@@ -32,25 +34,33 @@ sql-mode                       = STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,
 sysdate-is-now                 = 1
 innodb                         = FORCE
 innodb-strict-mode             = 1
-innodb-autoinc-lock-mode       = 2
-innodb-doublewrite             = 1
-innodb_flush_log_at_trx_commit = 0
 innodb_file_per_table          = 1
+# Mandatory per https://github.com/codership/documentation/issues/25
+innodb-autoinc-lock-mode       = 2
+# Per https://www.percona.com/blog/2006/08/04/innodb-double-write/
+innodb-doublewrite             = 1
+# Not fully ACID compliant, up to 1sec transaction loss in the event of total cluster failure (across both regions)
+# Enabled for performance per https://mariadb.com/kb/en/mariadb/getting-started-with-mariadb-galera-cluster/
+innodb_flush_log_at_trx_commit = 0
 
 # DATA STORAGE #
 datadir                        = /var/lib/mysql
 
 # BINARY LOGGING #
 log-bin                        = /var/lib/mysql/mysql-bin
-expire-logs-days               = 2
-sync-binlog                    = 1
+expire-logs-days               = 14
+# Disabling for performance per http://severalnines.com/blog/9-tips-going-production-galera-cluster-mysql
+sync-binlog                    = 0
+# Required for Galera
 binlog-format                  = row
 
 # CACHES AND LIMITS #
 tmp-table-size                 = 32M
 max-heap-table-size            = 32M
-query-cache-type               = 0
-query-cache-size               = 0
+# Re-enabling as now works with Maria 10.1.2
+query-cache-type               = 1
+query-cache-limit              = 4M
+query-cache-size               = 256M
 max-connections                = 500
 thread-cache-size              = 50
 open-files-limit               = 65535
@@ -63,7 +73,11 @@ innodb-log-files-in-group      = 2
 innodb-log-file-size           = 128M
 innodb-flush-log-at-trx-commit = 1
 innodb-file-per-table          = 1
-innodb-buffer-pool-size        = 128M
+# 80% Memory is default reco.
+# Need to re-evaluate when DB size grows
+innodb-buffer-pool-size        = 2G
+innodb_file_format             = Barracuda
+
 
 # LOGGING #
 log-error                      = /dev/stdout
@@ -73,7 +87,11 @@ slow-query-log                 = 1
 
 # GALERA SETTINGS #
 [galera]
+wsrep_on                       = ON
 wsrep_provider                 = /usr/lib64/galera/libgalera_smm.so
-wsrep_sst_method               = xtrabackup-v2
+wsrep_sst_method               = rsync
 wsrep_slave_threads            = 4
 innodb-flush-log-at-trx-commit = 2
+
+# MYISAM REPLICATION SUPPORT #
+wsrep_replicate_myisam         = ON

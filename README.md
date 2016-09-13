@@ -1,13 +1,15 @@
 **MariaDB 10.1 Galera CentOS 7**
 ==================
 
-CentOS 7 MariaDB 10.1 Galera cluster installation from the official MariaDB repository. Uses Percona Xtrabackup for state transfer as it doesn't require table locking during the transfer as with rsync. Image wil automatically run any sql scripts present in /docker-entrypoint-initdb.d as part of startup. 
+CentOS 7 MariaDB 10.1 Galera cluster installation from the official MariaDB repository. Uses rsync for state transfer. Image wil automatically run any sql scripts present in /docker-entrypoint-initdb.d as part of startup. 
 
 # Required Variables
 * **CLUSTER**=Can be either BOOTSTRAP, STANDALONE or a comma-separated list of container names
 * **SST_USER**=DB Username for SST service
 * **SST_PASS**=DB Password for SST service
 * **MYSQL_ROOT_PASSWORD**=The MariaDB root database password (or alternately, $MYSQL_ALLOW_EMPTY_PASSWORD or $MYSQL_RANDOM_ROOT_PASSWORD)
+* **WSREP_OPTS**=Additional wsrep_provider_options (such as "gmcast.segment=1" for defining a segment for clusters across datacenters)
+* **EXTRA_ARGS**=Any arbitrary additional args to pass to mariadb when starting
 
 ## To run a standalone instance
 

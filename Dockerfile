@@ -1,4 +1,4 @@
-FROM centos:7
+FROM centos:latest
 MAINTAINER dayreiner
 
 ENV MARIADB_MAJOR=10.1
@@ -9,7 +9,7 @@ COPY config/MariaDB.repo /etc/yum.repos.d/MariaDB.repo
 # Install required packages and MariaDB Vendor Repo
 RUN yum -y update && yum clean all && yum -y install epel-release && \
     rpm --import https://yum.mariadb.org/RPM-GPG-KEY-MariaDB && \
-    groupadd -r mysql && useradd -r -g mysql mysql && \
+    groupadd -g 250 -r mysql && useradd -u 250 -r -g mysql mysql && \
     yum -y install http://www.percona.com/downloads/percona-release/redhat/0.1-3/percona-release-0.1-3.noarch.rpm && \
     yum -y install MariaDB-server MariaDB-client galera percona-xtrabackup-24 less which socat pwgen && yum clean all && \
     mkdir /docker-entrypoint-initdb.d
