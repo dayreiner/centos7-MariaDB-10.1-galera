@@ -5,7 +5,16 @@ preflight () {
     if [[ -z ${CLUSTER_NAME+x} ]]; then
         echo >&2 "########### CLUSTER_NAME variable must be set."
         exit 1
+    elif [[ -z ${SST_USER} || -z ${SST_PASS} ]]; then
+        echo >&2 "########### SST_USER and SST_PASS variables must be set in order to start the cluster."
+        exit 1
    fi
+}
+
+cluster_conf () {
+    echo "########### Configuring /etc/my.cnf.d/server.cnf with cluster variables"
+    echo "wsrep_sst_auth                 = ${SST_USER}:${SST_PASS}" >> /etc/my.cnf.d/server.cnf
+    echo "wsrep_on                       = ON" >> /etc/my.cnf.d/server.cnf
 }
 
 
@@ -104,6 +113,13 @@ if [ "$1" = 'mysqld' -a -z "$wantHelp" ]; then
 			echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
 		fi
 
+    if [ "$SST_USER" -a "$SST_PASS" ]; then
+      echo "########## CREATING SST USER FOR REPLICATION ##########"
+      echo "CREATE USER '$SST_USER'@'%' IDENTIFIED BY '$SST_PASS' ;" | "${mysql[@]}"
+      echo "GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO '$SST_USER'@'%' ;" | "${mysql[@]}"
+      echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
+    fi
+
 		echo
 		for f in /docker-entrypoint-initdb.d/*; do
 			case "$f" in
@@ -134,6 +150,8 @@ if [ -z ${CLUSTER+x} ]; then
     exit 1
 elif [ ${CLUSTER} = "STANDALONE" ]; then
     initialize_db $@
+    # Workaround odd bug(?) causing corrupted binlog index after initialization
+    mv /var/lib/mysql/mysql-bin.index /tmp
     echo "########### Starting MariaDB in STANDALONE mode..."
     exec $@
 elif [ ${CLUSTER} = "BOOTSTRAP" ]; then
