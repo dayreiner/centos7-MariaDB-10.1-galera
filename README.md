@@ -1,7 +1,7 @@
 **MariaDB 10.1 Galera CentOS 7**
 ==================
 
-CentOS 7 MariaDB 10.1 Galera cluster installation from the official MariaDB repository. Uses rsync for state transfer. Image wil automatically run any sql scripts present in /docker-entrypoint-initdb.d as part of startup. 
+CentOS 7 MariaDB 10.1 Galera cluster installation from the official MariaDB repository. Uses xtrabackup for state transfer. Image wil automatically run any sql scripts present in /docker-entrypoint-initdb.d as part of startup. 
 
 # Required Variables
 * **CLUSTER**=Can be either BOOTSTRAP, STANDALONE or a comma-separated list of container names
