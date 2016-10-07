@@ -117,7 +117,7 @@ if [ "$1" = 'mysqld' -a -z "$wantHelp" ]; then
     if [ "$SST_USER" -a "$SST_PASS" ]; then
       echo "########## CREATING SST USER FOR REPLICATION ##########"
       echo "CREATE USER '$SST_USER'@'%' IDENTIFIED BY '$SST_PASS' ;" | "${mysql[@]}"
-      echo "GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO '$SST_USER'@'%' ;" | "${mysql[@]}"
+      echo "GRANT RELOAD, LOCK TABLES, PROCESS, REPLICATION CLIENT ON *.* TO '$SST_USER'@'%' ;" | "${mysql[@]}"
       echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
     fi
 
