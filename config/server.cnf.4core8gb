@@ -94,3 +94,5 @@ innodb-flush-log-at-trx-commit = 2
 
 # MYISAM REPLICATION SUPPORT #
 wsrep_replicate_myisam         = ON
+
+# ADDED BY ENTRYPOINT #

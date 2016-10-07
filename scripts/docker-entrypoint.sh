@@ -13,6 +13,7 @@ preflight () {
 
 cluster_conf () {
     echo "########### Configuring /etc/my.cnf.d/server.cnf with cluster variables"
+    echo "wsrep_sst_method               = xtrabackup-v2" >> /etc/my.cnf.d/server.cnf
     echo "wsrep_sst_auth                 = ${SST_USER}:${SST_PASS}" >> /etc/my.cnf.d/server.cnf
     echo "wsrep_on                       = ON" >> /etc/my.cnf.d/server.cnf
 }
@@ -157,6 +158,7 @@ elif [ ${CLUSTER} = "STANDALONE" ]; then
 elif [ ${CLUSTER} = "BOOTSTRAP" ]; then
     preflight
     initialize_db $@
+    cluster_conf
     echo "########### Bootstrapping MariaDB cluster ${CLUSTER_NAME} with primary node ${HOSTNAME}..."
     echo "########### Starting MariaDB cluster..."
     # Workaround odd bug(?) causing corrupted binlog index after initialization
@@ -170,6 +172,7 @@ else
     echo "########### Joining MariaDB cluster ${CLUSTER_NAME} on nodes ${CLUSTER}..."
     preflight
     initialize_db $@
+    cluster_conf
     exec $@ --wsrep_node_address="${HOSTNAME}" \
     --wsrep_cluster_name="${CLUSTER_NAME}" \
     --wsrep_cluster_address="gcomm://${CLUSTER}" \
